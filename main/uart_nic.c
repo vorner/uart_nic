@@ -48,7 +48,7 @@
 int ieee80211_output_pbuf(esp_aio_t *aio);
 esp_err_t mac_init(void);
 
-static const uint16_t FW_VERSION = 4;
+static const uint16_t FW_VERSION = 5;
 
 // Hack: because we don't see the beacon on some networks (and it's quite
 // common), but don't want to be "flapping", we set the timeout for beacon
@@ -106,6 +106,7 @@ QueueHandle_t uart_tx_queue = 0;
 QueueHandle_t wifi_egress_queue = 0;
 
 static char intron[8] = {'U', 'N', '\x00', '\x01', '\x02', '\x03', '\x04', '\x05'};
+static char intron_in[8] = {'X', 'N', '\x00', '\x01', '\x02', '\x03', '\x04', '\x05'};
 #define MAC_LEN 6
 static uint8_t mac[MAC_LEN];
 
@@ -245,7 +246,7 @@ static void wait_for_intron() {
         char c;
         int read = uart_read_bytes(UART_NUM_0, (uint8_t*)&c, 1, portMAX_DELAY);
         if(read == 1) {
-            if (c == intron[pos]) {
+            if (c == intron_in[pos]) {
                 pos++;
             } else {
                 //ESP_LOGI(TAG, "Invalid: %c, val: %d\n", c, (int)c);
@@ -360,6 +361,7 @@ static void read_wifi_client_message() {
 
 static void read_intron_message() {
     read_uart((uint8_t*)intron, sizeof(intron));
+    memcpy(intron_in + 1, intron + 1, sizeof(intron) - 1);
 }
 
 static int get_link_status() {
